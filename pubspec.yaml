@@ -1,0 +1,34 @@
+name: rockplay
+description: RockPlay personal music app
+publish_to: "none"
+version: 2.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  http: ^1.2.0
+  just_audio: ^0.9.36
+  provider: ^6.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/logo.png
+    - assets/sounds/rock_riff.wav
+    - assets/sounds/soft_chime.wav
+  fonts:
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald-Variable.ttf
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf

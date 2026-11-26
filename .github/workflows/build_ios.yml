@@ -1,0 +1,47 @@
+name: Build iPhone RockPlay IA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.9'
+      - run: flutter create --platforms=ios --project-name rockplay --org com.rockplayia .
+      - name: Fuente del modo Pulso (Space Grotesk)
+        run: |
+          curl -fsSL -o assets/fonts/SpaceGrotesk-Variable.ttf "https://github.com/google/fonts/raw/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf"
+      - run: python3 tools/add_deps.py
+      - run: python3 tools/setup_ios.py
+      - name: Ícono
+        run: |
+          python3 -m pip install --break-system-packages pillow || python3 -m pip install pillow
+          python3 tools/make_icon.py
+          printf 'flutter_launcher_icons:\n  android: false\n  ios: true\n  remove_alpha_ios: true\n  image_path: "assets/icon/icon.png"\n' > flutter_launcher_icons.yaml
+          flutter pub add --dev flutter_launcher_icons
+          dart run flutter_launcher_icons
+      - run: flutter pub get
+      - run: cd ios && pod install --repo-update
+      - run: flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
+      - name: Empaquetar .ipa (sin firmar; se firma al instalar con Sideloadly)
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qr RockPlayIA.ipa Payload
+          ls -la RockPlayIA.ipa
+      - name: Publicar en Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ultima --yes --cleanup-tag || true
+          gh release create ultima RockPlayIA.ipa --target "${{ github.sha }}" --prerelease \
+            --title "RockPlay IA iPhone (compilación ${{ github.run_number }})" \
+            --notes "Sin firmar. Instalar con Sideloadly desde una Mac."
